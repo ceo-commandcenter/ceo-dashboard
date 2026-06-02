@@ -14,20 +14,29 @@ st.write("🚀 Team Status: Active and Monitoring...")
 if "orders" not in st.session_state: st.session_state.orders = {}
 if "leads" not in st.session_state: st.session_state.leads = []
 
-# --- 🧠 DIRECT GEMINI API CALL FUNCTION (NO LIBRARY NEEDED) ---
+# --- 🧠 BULLETPROOF GEMINI API FUNCTION ---
 def call_gemini(prompt_text):
     if not GEMINI_API_KEY:
         return "Error: Gemini API Key missing in Secrets!"
-    # Direct HTTP Request to Google API
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    
+    # Using 'gemini-pro' which is universally stable for pure text endpoint
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
+    
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=10)
         res_json = response.json()
-        return res_json['candidates'][0]['content']['parts'][0]['text']
+        
+        # Safe reading of json response
+        if 'candidates' in res_json and len(res_json['candidates']) > 0:
+            return res_json['candidates'][0]['content']['parts'][0]['text']
+        elif 'error' in res_json:
+            return f"Google API Error: {res_json['error']['message']}"
+        else:
+            return f"Unexpected Response: {str(res_json)}"
     except Exception as e:
-        return f"Google Server Error: {e}"
+        return f"Request Failed: {e}"
 
 # --- 📢 ROHAN (MARKETING MANAGER) ---
 with st.sidebar:
@@ -37,7 +46,7 @@ with st.sidebar:
             with st.spinner("Rohan buyers dhoond raha hai..."):
                 report = call_gemini("Generate a list of 3 potential Indian handicraft buyers and store names with locations.")
                 st.session_state.leads.append(report)
-                st.success("Leads generated!")
+                st.success("Leads process completed!")
         except Exception as e: 
             st.error(f"Rohan Error: {e}")
             
