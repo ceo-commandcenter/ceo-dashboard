@@ -14,13 +14,13 @@ st.write("🚀 Team Status: Active and Monitoring...")
 if "orders" not in st.session_state: st.session_state.orders = {}
 if "leads" not in st.session_state: st.session_state.leads = []
 
-# --- 🧠 BULLETPROOF GEMINI API FUNCTION ---
+# --- 🧠 DIRECT GEMINI HTTP FUNCTION (FIXED URL) ---
 def call_gemini(prompt_text):
     if not GEMINI_API_KEY:
         return "Error: Gemini API Key missing in Secrets!"
     
-    # Using 'gemini-pro' which is universally stable for pure text endpoint
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    # Correct and direct production URL for Gemini 1.5 Flash
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
     
@@ -28,7 +28,6 @@ def call_gemini(prompt_text):
         response = requests.post(url, json=payload, headers=headers, timeout=10)
         res_json = response.json()
         
-        # Safe reading of json response
         if 'candidates' in res_json and len(res_json['candidates']) > 0:
             return res_json['candidates'][0]['content']['parts'][0]['text']
         elif 'error' in res_json:
@@ -52,7 +51,11 @@ with st.sidebar:
             
     if st.session_state.leads:
         for idx, lead in enumerate(st.session_state.leads):
-            st.info(f"Lead Set #{idx+1}\n{lead}")
+            # Safe clean rendering
+            if "Google" not in lead and "Unexpected" not in lead:
+                st.info(f"Lead Set #{idx+1}\n{lead}")
+            else:
+                st.error(f"Lead Set #{idx+1}\n{lead}")
 
 # --- 📲 WHATSAPP ENGINE ---
 if GREEN_API_INSTANCE and GREEN_API_TOKEN:
