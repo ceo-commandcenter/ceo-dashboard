@@ -1,14 +1,10 @@
 import streamlit as st
 import requests
-import google.generativeai as genai
 
 # --- KEYS SETUP ---
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 GREEN_API_INSTANCE = st.secrets.get("GREEN_API_INSTANCE", "")
 GREEN_API_TOKEN = st.secrets.get("GREEN_API_TOKEN", "")
-
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 st.set_page_config(page_title="CEO Command Center", layout="wide")
 st.title("💼 CEO Command Center: AI Empire")
@@ -18,23 +14,38 @@ st.write("🚀 Team Status: Active and Monitoring...")
 if "orders" not in st.session_state: st.session_state.orders = {}
 if "leads" not in st.session_state: st.session_state.leads = []
 
+# --- 🧠 DIRECT GEMINI API CALL FUNCTION (NO LIBRARY NEEDED) ---
+def call_gemini(prompt_text):
+    if not GEMINI_API_KEY:
+        return "Error: Gemini API Key missing in Secrets!"
+    # Direct HTTP Request to Google API
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        res_json = response.json()
+        return res_json['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        return f"Google Server Error: {e}"
+
 # --- 📢 ROHAN (MARKETING MANAGER) ---
 with st.sidebar:
     st.header("📢 Rohan (Marketing Manager)")
     if st.button("🔍 Rohan: Find Handicraft Buyers"):
         try:
-            # Fixed version compatible model name
-            model = genai.GenerativeModel(model_name='models/gemini-pro')
-            res = model.generate_content("Generate a list of 3 potential Indian handicraft buyers and store names.")
-            st.session_state.leads.append(res.text)
-            st.success("Leads generated!")
-        except Exception as e: st.error(f"Rohan Error: {e}")
+            with st.spinner("Rohan buyers dhoond raha hai..."):
+                report = call_gemini("Generate a list of 3 potential Indian handicraft buyers and store names with locations.")
+                st.session_state.leads.append(report)
+                st.success("Leads generated!")
+        except Exception as e: 
+            st.error(f"Rohan Error: {e}")
             
     if st.session_state.leads:
         for idx, lead in enumerate(st.session_state.leads):
             st.info(f"Lead Set #{idx+1}\n{lead}")
 
-# --- 📲 WHATSAPP ENGINE (SAFE JSON PARSING) ---
+# --- 📲 WHATSAPP ENGINE ---
 if GREEN_API_INSTANCE and GREEN_API_TOKEN:
     try:
         receive_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/receiveNotification/{GREEN_API_TOKEN}"
@@ -55,11 +66,10 @@ if GREEN_API_INSTANCE and GREEN_API_TOKEN:
                             st.session_state.orders[sender_id] = {"client": sender_id, "msg": user_msg, "status": "pending_price"}
                             
                             amit_persona = "Aapka naam Amit hai, Sales Manager. Client ko bohot polite bhasha mein kahein ki unka message CEO sir ke dashboard par chala gaya hai, jaise hi sir price batayenge hum aapko confirm karenge."
-                            model = genai.GenerativeModel(model_name='models/gemini-pro')
-                            ai_res = model.generate_content(f"{amit_persona}\n\nClient: {user_msg}\nAmit:")
+                            ai_reply = call_gemini(f"{amit_persona}\n\nClient: {user_msg}\nAmit:")
                             
                             send_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
-                            requests.post(send_url, json={"chatId": sender_id, "message": ai_res.text})
+                            requests.post(send_url, json={"chatId": sender_id, "message": ai_reply})
                 
                 requests.delete(f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/deleteNotification/{GREEN_API_TOKEN}/{receipt_id}")
                 st.rerun()
