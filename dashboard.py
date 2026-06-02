@@ -23,8 +23,8 @@ with st.sidebar:
     st.header("📢 Rohan (Marketing Manager)")
     if st.button("🔍 Rohan: Find Handicraft Buyers"):
         try:
-            # Model name updated to support older library versions
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            # Fixed version compatible model name
+            model = genai.GenerativeModel(model_name='models/gemini-pro')
             res = model.generate_content("Generate a list of 3 potential Indian handicraft buyers and store names.")
             st.session_state.leads.append(res.text)
             st.success("Leads generated!")
@@ -55,7 +55,7 @@ if GREEN_API_INSTANCE and GREEN_API_TOKEN:
                             st.session_state.orders[sender_id] = {"client": sender_id, "msg": user_msg, "status": "pending_price"}
                             
                             amit_persona = "Aapka naam Amit hai, Sales Manager. Client ko bohot polite bhasha mein kahein ki unka message CEO sir ke dashboard par chala gaya hai, jaise hi sir price batayenge hum aapko confirm karenge."
-                            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                            model = genai.GenerativeModel(model_name='models/gemini-pro')
                             ai_res = model.generate_content(f"{amit_persona}\n\nClient: {user_msg}\nAmit:")
                             
                             send_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
