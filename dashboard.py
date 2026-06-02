@@ -2,14 +2,10 @@ import streamlit as st
 import requests
 import google.generativeai as genai
 
-# --- KEYS SETUP (WITH JOINED TOKEN) ---
+# --- KEYS SETUP ---
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 GREEN_API_INSTANCE = st.secrets.get("GREEN_API_INSTANCE", "")
-
-# Token ke dono parts ko jod kar poora token banana
-PART1 = st.secrets.get("PART1", "")
-PART2 = st.secrets.get("PART2", "")
-GREEN_API_TOKEN = PART1 + PART2
+GREEN_API_TOKEN = st.secrets.get("GREEN_API_TOKEN", "")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
@@ -18,11 +14,11 @@ st.set_page_config(page_title="CEO Command Center", layout="wide")
 st.title("💼 CEO Command Center: AI Empire")
 st.write("🚀 Team Status: Active and Monitoring...")
 
-# --- DATA STORAGE ---
+# --- DATA STORAGE (SESSION STATE) ---
 if "orders" not in st.session_state: st.session_state.orders = {}
 if "leads" not in st.session_state: st.session_state.leads = []
 
-# --- ROHAN (SIDEBAR) ---
+# --- ROHAN (SIDEBAR: MARKETING) ---
 with st.sidebar:
     st.header("📢 Rohan (Marketing Manager)")
     if st.button("🔍 Rohan: Find Handicraft Buyers"):
@@ -37,42 +33,50 @@ with st.sidebar:
         for idx, lead in enumerate(st.session_state.leads):
             st.info(f"Lead Set #{idx+1}\n{lead}")
 
-# --- 📲 WHATSAPP ENGINE ---
+# --- 📲 WHATSAPP ENGINE (FAIL-SAFE CHECK ON REFRESH) ---
 if GREEN_API_INSTANCE and GREEN_API_TOKEN:
     try:
+        # Green API se naya message read karna
         receive_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/receiveNotification/{GREEN_API_TOKEN}"
-        res = requests.get(receive_url, timeout=4).json()
+        res = requests.get(receive_url, timeout=3).json()
         
         if res and "receiptId" in res:
             receipt_id = res["receiptId"]
             body = res.get("body", {})
             
+            # Agar koi message receive hua hai
             if body.get("typeWebhook") == "incomingMessageReceived":
                 user_msg = body.get("messageData", {}).get("textMessageData", {}).get("textMessage", "")
                 sender_id = body.get("senderData", {}).get("chatId", "")
                 
                 if user_msg and sender_id:
+                    # Amit Persona Rules
                     amit_persona = (
                         "Aapka naam Amit hai aur aap Sales Manager hain. Tameez se 'Sir/Ma'am' kehkar baat karein. "
                         "Client ko kahein: 'Maine details CEO Sir ke dashboard par bhej di hain, jaise hi sir final price batayenge main aapko confirm karta hoon. Tab tak aap advance payment ready rakhein.' "
-                        "Aapko khud se koi price nahi batana hai."
+                        "Aapko khud se koi price ya rate nahi batana hai."
                     )
                     
-                    if any(k in user_msg.lower() for k in ["order", "product", "deal", "buy", "price", "kharidna", "rate", "bhaav"]):
+                    # Keywords check karke order list mein daalna
+                    if any(k in user_msg.lower() for k in ["order", "product", "deal", "buy", "price", "kharidna", "rate", "bhaav", "hello", "hi"]):
                         st.session_state.orders[sender_id] = {"client": sender_id, "msg": user_msg, "status": "pending_price", "price": None}
                     
+                    # Generate Amit's Reply via Gemini
                     model = genai.GenerativeModel('gemini-pro')
                     ai_res = model.generate_content(f"{amit_persona}\n\nClient: {user_msg}\nAmit:")
                     
+                    # WhatsApp par reply bhej dena
                     send_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
                     requests.post(send_url, json={"chatId": sender_id, "message": ai_res.text})
             
-            requests.delete(f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/deleteNotification/{GREEN_API_TOKEN}/{receipt_id}")
+            # Message process hone ke baad use queue se delete karna
+            delete_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/deleteNotification/{GREEN_API_TOKEN}/{receipt_id}"
+            requests.delete(delete_url)
             st.rerun()
     except:
         pass
 
-# --- MAIN DASHBOARD LAYOUT ---
+# --- MAIN DASHBOARD LAYOUT (AMIT & SHARMA JI) ---
 col1, col2 = st.columns(2)
 
 with col1:
@@ -82,7 +86,7 @@ with col1:
     else:
         for client_id, order_data in list(st.session_state.orders.items()):
             if order_data['status'] == 'pending_price':
-                st.warning(f"📦 **Naya Product Mila** from `{client_id}`")
+                st.warning(f"📦 **Naya Product Request** from `{client_id}`")
                 st.write(f"**Details:** {order_data['msg']}")
                 
                 ceo_price = st.text_input(f"Iska price set karein (₹):", key=f"p_{client_id}")
@@ -111,5 +115,7 @@ with col2:
     else:
         st.info("Deals poori hone par Sharma Ji yahan bill banayenge.")
 
-if st.button("🔄 Check New WhatsApp Messages manually"):
+# Force check button
+st.write("---")
+if st.button("🔄 Check New WhatsApp Messages Manually"):
     st.rerun()
