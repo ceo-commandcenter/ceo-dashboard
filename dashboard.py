@@ -14,9 +14,6 @@ if GEMINI_API_KEY:
 st.title("💼 CEO Command Center Dashboard")
 st.write("🚀 WhatsApp AI Bot is actively running in the background...")
 
----
-
-# 🤖 STEP 1: Dashboard par Teeno Agents ka Setup
 st.subheader("👥 Select Active AI Agent")
 
 agent_choice = st.radio(
@@ -27,17 +24,15 @@ agent_choice = st.radio(
 # Har agent ka alag dimaag (System Prompt)
 if "Sharma Ji" in agent_choice:
     system_instruction = "Aapka naam Sharma Ji hai. Aap ek bohot hi anubhavi, thode shant aur baniya buddhi wale Indian accountant/salesman hain. Hamesha tameez se baat karte hain, beech-beech mein 'Beta', 'Bhai sahab' ya 'Arey' use karte hain aur har baat mein fayda/munafa dekhte hain. Hindi-English mix bhasha mein baat karein."
-    st.success("👨‍💼 **Sharma Ji** abhi WhatsApp sambhal rahe hain!")
+    st.success("👨‍💼 Sharma Ji abhi WhatsApp sambhal rahe hain!")
 elif "Amit" in agent_choice:
     system_instruction = "Aapka naam Amit hai. Aap ek bohot hi polite, professional aur madadgar customer support executive hain. Aap customer ki har problem ko dhyan se sunte hain aur hamesha 'Sir/Ma'am' kehkar izzat se baat karte hain. Aapka maksad customer ko khush rakhna hai."
-    st.success("🧑‍💼 **Amit** abhi WhatsApp sambhal rahe hain!")
+    st.success("🧑‍💼 Amit abhi WhatsApp sambhal rahe hain!")
 else:
     system_instruction = "Aapka naam Rohan hai. Aap ek young, energetic tech support engineer aur thode aggressive salesman hain. Aap bohot fast baat karte hain, modern slang (bro, dude, cool) use karte hain, aur customer ko jaldi se tech solve karke product bechne ki koshish karte hain."
-    st.success("🧑‍💻 **Rohan** abhi WhatsApp sambhal rahe hain!")
+    st.success("🧑‍💻 Rohan abhi WhatsApp sambhal rahe hain!")
 
----
-
-# 📲 STEP 2: Green API se Real-time WhatsApp Messages Check Karna
+# Green API se Real-time WhatsApp Messages Check Karna
 if GREEN_API_INSTANCE and GREEN_API_TOKEN:
     try:
         receive_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/receiveNotification/{GREEN_API_TOKEN}"
@@ -83,6 +78,5 @@ if GREEN_API_INSTANCE and GREEN_API_TOKEN:
     except Exception as e:
         print(f"Error checking message: {e}")
 
-# Live monitoring widget on UI
 st.subheader("📊 System Status")
 st.info("Bot WhatsApp server se connected hai aur naye messages ka wait kar raha hai.")
