@@ -23,7 +23,8 @@ with st.sidebar:
     st.header("📢 Rohan (Marketing Manager)")
     if st.button("🔍 Rohan: Find Handicraft Buyers"):
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # Model name updated to support older library versions
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
             res = model.generate_content("Generate a list of 3 potential Indian handicraft buyers and store names.")
             st.session_state.leads.append(res.text)
             st.success("Leads generated!")
@@ -39,7 +40,6 @@ if GREEN_API_INSTANCE and GREEN_API_TOKEN:
         receive_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/receiveNotification/{GREEN_API_TOKEN}"
         response = requests.get(receive_url, timeout=3)
         
-        # Agar response me data hai tabhi parse karega, varna crash nahi hoga
         if response.status_code == 200 and response.text.strip():
             res = response.json()
             if res and "receiptId" in res:
@@ -55,7 +55,7 @@ if GREEN_API_INSTANCE and GREEN_API_TOKEN:
                             st.session_state.orders[sender_id] = {"client": sender_id, "msg": user_msg, "status": "pending_price"}
                             
                             amit_persona = "Aapka naam Amit hai, Sales Manager. Client ko bohot polite bhasha mein kahein ki unka message CEO sir ke dashboard par chala gaya hai, jaise hi sir price batayenge hum aapko confirm karenge."
-                            model = genai.GenerativeModel('gemini-1.5-flash')
+                            model = genai.GenerativeModel('gemini-1.5-flash-latest')
                             ai_res = model.generate_content(f"{amit_persona}\n\nClient: {user_msg}\nAmit:")
                             
                             send_url = f"https://api.green-api.com/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
@@ -72,7 +72,6 @@ col1, col2 = st.columns(2)
 with col1:
     st.header("🤝 Amit (Sales Manager)")
     
-    # 🧪 DIRECT TESTING BUTTON (BINA WHATSAPP MESSAGE KE BHI CHALNE KELIYE)
     if st.button("🧪 Simulated Test: Generate Dummy Order"):
         dummy_id = "919999999999@c.us"
         st.session_state.orders[dummy_id] = {"client": dummy_id, "msg": "Mujhe 50 items ka price janna hai, urgently batayein.", "status": "pending_price"}
